@@ -2,7 +2,7 @@
 /*
 Plugin Name: Open Graph Pro
 Plugin URI: http://ten-fingers-and-a-brain.com/wordpress-plugins/ogp/
-Version: 1.0
+Version: 1.1
 Description: Adds Open Graph tags to your blog. Control how your posts and pages are presented on Facebook and other social media sites. No configuration needed.
 Author: Martin Lormes
 Author URI: http://ten-fingers-and-a-brain.com/
@@ -23,15 +23,140 @@ FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with 
 this program. If not, see <http://www.gnu.org/licenses/>.
 */
-/** Open Graph Pro (WordPress Plugin) */
+/**
+ * Open Graph Pro (WordPress Plugin)
+ * @package ogp
+ */
 
 // i18n/l10n
 load_plugin_textdomain ( 'ogp', '', basename ( dirname ( __FILE__ ) ) );
+
+/**
+ * Open Graph Pro (WordPress Plugin) Public API functions wrapped in a class. (namespacing pre PHP 5.3)
+ * @since 1.1
+ */
+class Open_Graph_Pro
+{
+  /**
+   * Retrieve the Open Graph Protocol meta information for the current view, or (if in the loop) for the current post or page
+   *
+   * @todo write short API doc
+   * @since 1.1
+   * @uses ogp__open_graph_pro::sanitize_fb_admins
+   */
+  function get_metadata ()
+  {
+    $options = get_option ( 'ogp' );
+    // == let's set some default values
+    
+    // site_name - the name of the site
+    $site_name = get_option('blogname');
+    
+    // image
+    if ( is_array ( $options ) && isset ( $options['image']['url'] ) && ( '' != $options['image']['url'] ) )
+      $image = $options['image']['url'];
+    // use the header image, if available
+    else
+    /** @todo use header image thumbnail */
+      $image = ( defined('HEADER_IMAGE') AND '' != get_header_image() ) ? get_header_image() : '';
+    
+    $admins = ( is_array ( $options ) && isset ( $options['facebook']['admins'] ) && ( '' != $options['facebook']['admins'] ) ) ? $options['facebook']['admins'] : '';
+    
+    $app_id = ( is_array ( $options ) && isset ( $options['facebook']['app_id'] ) && ( '' != $options['facebook']['app_id'] ) ) ? $options['facebook']['app_id'] : '';
+    
+    // title - use the same value as for site_name
+    $title = $site_name;
+    
+    // type
+    if ( is_array ( $options ) && isset ( $options['type']['type'] ) && ( '' != $options['type']['type'] ) )
+      $type = $options['type']['type'];
+    // defaults to 'blog'
+    else
+      $type = 'blog';
+    
+    // url - always use the blog url
+    $url = get_bloginfo('url');
+    
+    // description - use the tagline
+    /** @todo this shall become editable on a settings page */
+    $description = get_option('blogdescription');
+    
+    $posts_on = !is_array ( $options ) || !isset ( $options['advanced']['posts_on'] ) || ( '1' == $options['advanced']['posts_on'] );
+    $pages_on = !is_array ( $options ) || !isset ( $options['advanced']['pages_on'] ) || ( '1' == $options['advanced']['pages_on'] );
+    
+    // == if we're dealing with an individual post or page
+    global $post;
+    if ( ( in_the_loop() && ( ( ( 'post' == $post->post_type ) && $posts_on ) || ( ( 'page' == $post->post_type ) && $pages_on ) ) ) || ( is_single() && $posts_on ) || ( is_page() && $pages_on ) )
+    {
+      $meta = get_post_meta ( $post->ID, '_ogp__open_graph_pro', true );
+      if ( is_array ( $meta ) && !( isset ( $meta['toggle'] ) && ( 'off' == $meta['toggle'] ) ) && isset ( $meta['use_page'] ) )
+      {
+        $thispost = get_post ( $meta['use_page'] );
+        $meta = get_post_meta ( $thispost->ID, '_ogp__open_graph_pro', true );
+      }
+      else
+        $thispost = $post;
+      
+      if ( !( is_array ( $meta ) && isset ( $meta['toggle'] ) && ( 'off' == $meta['toggle'] ) ) ) // ogp not toggled off
+      {
+        
+        // title - the post title
+        $title = $thispost->post_title;
+        
+        $type = ( is_array ( $meta ) && isset ( $meta['type'] ) ) ? $meta['type'] : 'article';
+        
+        // url - always use the permalink
+        $url = get_permalink($thispost->ID);
+        
+        // image -- if we have any post images, use them; featured image (a.k.a. post thumbnail) will be preferred (if there's no image here, use header image from above)
+        if ( !is_array ( $options ) || !isset ( $options['image']['headeronly'] ) || ( '1' != $options['image']['headeronly'] ) )
+        {
+          if ( function_exists ( 'has_post_thumbnail' ) AND has_post_thumbnail($thispost->ID) )
+          {
+            $attachment = wp_get_attachment_image_src ( get_post_thumbnail_id($thispost->ID) );
+            $image = $attachment[0];
+          }
+          elseif ( preg_match ( '/<img\s[^>]*src=["\']?([^>"\']+)/i', $thispost->post_content, $match ) )
+            $image = $match[1];
+        }
+        
+        // description - use the excerpt if available, else use the content
+        $description = strip_tags ( $thispost->post_excerpt ? $thispost->post_excerpt : $thispost->post_content );
+        
+        // Facebook user IDs from $meta
+        if ( is_array ( $meta ) && isset ( $meta['fb_admins'] ) && ( '' != $meta['fb_admins'] ) )
+        {
+          $admins = ogp__open_graph_pro::sanitize_fb_admins ( $admins.','.$meta['fb_admins'] );
+        }
+        
+      } // ogp not toggled off
+    }
+    
+    // clean up the description, i.e. strip any html tags, completely normalize whitespace, etc., and truncate at 255 characters length
+    $description = preg_replace ( '/\s+/', ' ', $description );
+    if ( strlen ( $description ) > 255 ) $description = substr ( $description, 0, 252 ) . '...';
+    $description = $description;
+    
+    // return an array containing all the meta information
+    return apply_filters ( 'ogp_get_metadata', compact ( 'title', 'site_name', 'description', 'type', 'url', 'image', 'admins', 'app_id' ) );
+  }
+}
 
 /** Open Graph Pro (WordPress Plugin) functions wrapped in a class. (namespacing pre PHP 5.3) */
 class ogp__open_graph_pro
 {
 
+  /**
+   * @since 1.1
+   */
+  function edit_post_link ( $s, $postid )
+  {
+    $url = urlencode ( get_permalink($postid) );
+    $title = esc_attr ( __( 'Check Open Graph metadata using the Facebook URL Linter', 'ogp' ) );
+    $text = __( 'Check Open Graph metadata', 'ogp' );
+    return "$s - <a href=\"http://developers.facebook.com/tools/lint?url=$url\" title=\"$title\">$text</a>";
+  }
+  
   /**
    * let's put the Open Graph and Facebook namespaces in the <html> tag (if the theme supports it)
    *
@@ -55,104 +180,29 @@ class ogp__open_graph_pro
    * let's output the Open Graph tags
    *
    * hooked to {@link http://codex.wordpress.org/Plugin_API/Action_Reference WordPress action}: wp_head
+   *
+   * @uses Open_Graph_Pro::get_metadata
+   * @param bool $return whether to return the Open Graph Protocol tags (true) or to echo them straight to the output (false, default)
    */
-  function wp_head ()
+  function wp_head ( $return = false )
   {
-    $options = get_option ( 'ogp' );
-    // == let's set some default values
-    
-    // site_name - the name of the site
-    $site_name = esc_attr ( get_option('blogname') );
-    
-    // image
-    if ( is_array ( $options ) && isset ( $options['image']['url'] ) && ( '' != $options['image']['url'] ) )
-      $image = esc_attr ( $options['image']['url'] );
-    // use the header image, if available
-    else
-      $image = ( defined('HEADER_IMAGE') AND '' != get_header_image() ) ? esc_attr ( get_header_image() ) : '';
-    
-    $admins = ( is_array ( $options ) && isset ( $options['facebook']['admins'] ) && ( '' != $options['facebook']['admins'] ) ) ? $options['facebook']['admins'] : '';
-    
-    $app_id = ( is_array ( $options ) && isset ( $options['facebook']['app_id'] ) && ( '' != $options['facebook']['app_id'] ) ) ? $options['facebook']['app_id'] : '';
-    
-    $posts_on = !is_array ( $options ) || !isset ( $options['advanced']['posts_on'] ) || ( '1' == $options['advanced']['posts_on'] );
-    $pages_on = !is_array ( $options ) || !isset ( $options['advanced']['pages_on'] ) || ( '1' == $options['advanced']['pages_on'] );
-    
-    // == if we're dealing with an individual post or page
-    if ( ( is_single() && $posts_on ) || ( is_page() && $pages_on ) )
-    {
-      global $post;
-      
-      $meta = get_post_meta ( $post->ID, '_ogp__open_graph_pro', true );
-      if ( is_array ( $meta ) && isset ( $meta['use_page'] ) )
-      {
-        $thispost = get_post ( $meta['use_page'] );
-        $meta = get_post_meta ( $thispost->ID, '_ogp__open_graph_pro', true );
-      }
-      else
-        $thispost = $post;
-      
-      // title - the post title
-      $title = esc_attr ( $thispost->post_title );
-      
-      $type = ( is_array ( $meta ) && isset ( $meta['type'] ) ) ? $meta['type'] : 'article';
-      
-      // url - always use the permalink
-      $url = esc_attr ( get_permalink($thispost->ID) );
-      
-      // image -- if we have any post images, use them; featured image (a.k.a. post thumbnail) will be preferred (if there's no image here, use header image from above)
-      if ( !is_array ( $options ) || !isset ( $options['image']['headeronly'] ) || ( '1' != $options['image']['headeronly'] ) )
-      {
-        if ( function_exists ( 'has_post_thumbnail' ) AND has_post_thumbnail($thispost->ID) )
-        {
-          $attachment = wp_get_attachment_image_src ( get_post_thumbnail_id($thispost->ID) );
-          $image = esc_attr ( $attachment[0] );
-        }
-        elseif ( preg_match ( '/<img\s[^>]*src=["\']?([^>"\']+)/i', $thispost->post_content, $match ) )
-          $image = esc_attr ( $match[1] );
-      }
-      
-      // description - use the excerpt if available, else use the content
-      $description = strip_tags ( $thispost->post_excerpt ? $thispost->post_excerpt : $thispost->post_content );
-      
-      /** @todo Facebook user IDs from $meta */
-    }
-    // == else, i.e. if we're NOT dealing with an individual post or page
-    else
-    {
-      // title - use the same value as for site_name
-      $title = $site_name;
-      
-      // type
-      if ( is_array ( $options ) && isset ( $options['type']['type'] ) && ( '' != $options['type']['type'] ) )
-        $type = esc_attr ( $options['type']['type'] );
-      // defaults to 'blog'
-      else
-        $type = 'blog';
-      
-      // url - always use the blog url
-      $url = esc_attr ( get_bloginfo('url') );
-      
-      // description - use the tagline
-      /** @todo this shall become editable on a settings page */
-      $description = get_option('blogdescription');
-    }
-    
-    // clean up the description, i.e. strip any html tags, completely normalize whitespace, etc., and truncate at 255 characters length
-    $description = preg_replace ( '/\s+/', ' ', $description );
-    if ( strlen ( $description ) > 255 ) $description = substr ( $description, 0, 252 ) . '...';
-    $description = esc_attr ( $description );
+    $data = Open_Graph_Pro::get_metadata();
+    array_walk ( $data, 'esc_attr' );
+    extract ( $data );
     
     // == now let's actually output everything
+                              $html  = "<!-- Open Graph Pro 1.1 -->\n";
+                              $html .= "<meta property=\"og:title\" content=\"$title\" />\n";
+                              $html .= "<meta property=\"og:site_name\" content=\"$site_name\" />\n";
+    if ( '' != $description ) $html .= "<meta property=\"og:description\" content=\"$description\" />\n";
+                              $html .= "<meta property=\"og:type\" content=\"$type\" />\n";
+                              $html .= "<meta property=\"og:url\" content=\"$url\" />\n";
+    if ( '' != $image )       $html .= "<meta property=\"og:image\" content=\"$image\" />\n";
+    if ( '' != $admins )      $html .= "<meta property=\"fb:admins\" content=\"$admins\" />\n";
+    if ( '' != $app_id )      $html .= "<meta property=\"fb:app_id\" content=\"$app_id\" />\n";
     
-    echo "<meta property=\"og:title\" content=\"$title\" />\n";
-    echo "<meta property=\"og:site_name\" content=\"$site_name\" />\n";
-    if ( '' != $description ) echo "<meta property=\"og:description\" content=\"$description\" />\n";
-    echo "<meta property=\"og:type\" content=\"$type\" />\n";
-    echo "<meta property=\"og:url\" content=\"$url\" />\n";
-    if ( '' != $image ) echo "<meta property=\"og:image\" content=\"$image\" />\n";
-    if ( '' != $admins ) echo "<meta property=\"fb:admins\" content=\"$admins\" />\n";
-    if ( '' != $app_id ) echo "<meta property=\"fb:app_id\" content=\"$app_id\" />\n";
+    if ( $return ) return $html;
+    else           echo   $html;
   }
   
   /**
@@ -162,6 +212,7 @@ class ogp__open_graph_pro
    */
   function init ()
   {
+    add_filter ( 'edit_post_link', array ( 'ogp__open_graph_pro', 'edit_post_link' ), 10, 2 );
     add_filter ( 'language_attributes', array ( 'ogp__open_graph_pro', 'language_attributes' ) );
     add_action ( 'wp_head', array ( 'ogp__open_graph_pro', 'wp_head' ) );
   }
@@ -171,7 +222,7 @@ class ogp__open_graph_pro
    */
   function settings_section__type ()
   {
-    _e( '<p>By default the plugin labels your site a "blog". However, Open Graph supports various other object types.</p><p>You can change the object type <em>on a per-page basis on the page editing screens</em>. You should do that if you have multiple objects and a different page for each of them, e.g. the different products you sell, the different athletes on your team, one page per song or album of your band, etc.</p><p>You can change the object type <em>of your entire site</em> here.</p>', 'ogp' );
+    _e( '<p>By default the plugin labels your site a "blog". However, Open Graph supports various other object types.</p><p>You can change the object type <em>on a per-page basis on <a href="edit.php?post_type=page">the page editing screens</a></em>. You should do that if you have multiple objects and a different page for each of them, e.g. the different products you sell, the different athletes on your team, one page per song or album of your band, etc.</p><p>You can change the object type <em>of your entire site</em> here.</p>', 'ogp' );
   }
   
   /**
@@ -315,19 +366,29 @@ class ogp__open_graph_pro
   }
   
   /**
-   * sanitize plugin options, i.e. check and correct formatting before storing in database
-   * @since 1.0
+   * check list of facebook admins for CSV and normalize
+   * @since 1.1
    */
-  function sanitize__ogp ( $settings )
+  function sanitize_fb_admins ( $s )
   {
-    // check list of facebook admins for CSV and normalize
-    $admins = trim ( $settings['facebook']['admins'] );
+    $admins = trim ( $s );
     $admins = preg_replace ( '/\s+/', ' ', $admins );
     $admins = preg_replace ( '/[^0-9,; ]/', '', $admins );
     $admins = preg_replace ( '/\s*[,;]\s*/', ',', $admins );
     $admins = preg_replace ( '/\s+/', ',', $admins );
     $admins = preg_replace ( '/,+/', ',', $admins );
-    
+    $admins = preg_replace ( '/^,|,$/', '', $admins );
+    $admins = implode ( ',', array_unique ( explode ( ',', $admins ) ) );
+    return $admins;
+  }
+  
+  /**
+   * sanitize plugin options, i.e. check and correct formatting before storing in database
+   * @since 1.0
+   * @uses sanitize_fb_admins
+   */
+  function sanitize__ogp ( $settings )
+  {
     return array (
       'type' => array (
         'type' => $settings['type']['type'],
@@ -337,7 +398,7 @@ class ogp__open_graph_pro
         'url' => trim ( $settings['image']['url'] ),
       ),
       'facebook' => array (
-        'admins' => $admins, // sanitization see above
+        'admins' => ogp__open_graph_pro::sanitize_fb_admins ( $settings['facebook']['admins'] ),
         'app_id' => preg_replace ( '/[^0-9]/', '', $settings['facebook']['app_id'] ),
       ),
       'advanced' => array (
@@ -369,77 +430,110 @@ class ogp__open_graph_pro
     if ( !isset ( $meta ) || ( '' == $meta ) )
       $meta = array ( 'use_page' => '', 'type' => 'article', 'fb_admins' => '', );
     
-    wp_nonce_field ( plugin_basename( __FILE__ ), '_ogp_nonce' );
+    wp_nonce_field ( plugin_basename( __FILE__ ), '_ogp__open_graph_pro[nonce]' );
     
+    /** @todo toggle object type field and fb_admins field when not using "this page" */
     ?>
     
+    <script type="text/javascript">
+      //<![CDATA[
+      function ogp_toggle_meta(on)
+      {
+        if (use_page=document.getElementById('_ogp__open_graph_pro[use_page]')) use_page.disabled=!on;
+        if (ogp_type=document.getElementById('ogp__type'))                      ogp_type.disabled=!on;
+        if (fbadmins=document.getElementById('ogp__fb_admins'))               { fbadmins.disabled=!on; fbadmins.className=((on)?'':'disabled'); }
+      }
+      //]]>
+    </script>
+    
     <?php if ( 'page' == $p->post_type ) : ?>
+      <p><input onchange="return ogp_toggle_meta(this.checked);" type="checkbox" id="ogp_toggle"<?php if ( !isset ( $meta['toggle'] ) || ( 'on' == $meta['toggle'] ) ) echo ' checked="checked"'; ?> name="_ogp__open_graph_pro[toggle]" value="on"/><label for="ogp_toggle"><?php _e( 'This page has individual Open Graph Protocol meta information, i.e. do <em>not</em> use the same data as on the home page', 'ogp' ); ?></label></p>
+      
       <p><label for="_ogp__open_graph_pro[use_page]"><?php _e( 'Use metadata of the following page, e.g. if this is a page about a product feature and you want users to "Like" the entire product, not just the feature:', 'ogp' ); ?></label><br/>
+      <?php /** @todo exclude this page from list, to avoid disabling form fields */ ?>
       <?php wp_dropdown_pages ( array ( 'name' => '_ogp__open_graph_pro[use_page]', 'selected' => $meta['use_page'], 'show_option_none' => __( '-- this page --', 'ogp' ) ) ); ?>
       </p>
       
       <p><label for="ogp__type"><?php _e( 'Change the object type for this page to:', 'ogp' ); ?></label><br/>
-      <?php ogp__open_graph_pro::ogp_dropdown_types ( $meta['type'], '_ogp__open_graph_pro[type]', 'ogp__type', array ( array ( 'Websites', 'blog' ), array ( 'Websites', 'website' ), ) ); ?>
+      <?php
+        ogp__open_graph_pro::ogp_dropdown_types (
+          $meta['type'],
+          '_ogp__open_graph_pro[type]',
+          'ogp__type',
+          array (
+            array ( 'Websites', 'blog' ),
+            //array ( 'Websites', 'website' ),
+          )
+        );
+      ?>
       </p>
       
-      <?php /* ?>
       <p><label for="ogp__fb_admins"><?php _e( 'Add the following Facebook users as administrators to this page:', 'ogp' ); ?></label><br/>
       <input type="text" name="_ogp__open_graph_pro[fb_admins]" id="ogp__fb_admins" style="width:99%" value="<?php echo esc_attr ( $meta['fb_admins'] ); ?>"/><br/>
       <?php echo sprintf ( __( '(enter a comma separated list of <a href="%1$s">numerical Facebook user IDs</a> &ndash; please note: users must "Like" the page to be approved as administrators)', 'ogp' ), __( 'http://ten-fingers-and-a-brain.com/wordpress-plugins/ogp/facebook-id/', 'ogp' ) ); ?></p>
-      <?php //*/ ?>
       
     <?php elseif ( 'post' == $p->post_type ) : ?>
+      <p><input onchange="return ogp_toggle_meta(this.checked);" type="checkbox" id="ogp_toggle"<?php if ( !isset ( $meta['toggle'] ) || ( 'on' == $meta['toggle'] ) ) echo ' checked="checked"'; ?> name="_ogp__open_graph_pro[toggle]" value="on"/><label for="ogp_toggle"><?php _e( 'This post has individual Open Graph Protocol meta information, i.e. do <em>not</em> use the same data as on the home page', 'ogp' ); ?></label></p>
+      
       <p><label for="_ogp__open_graph_pro[use_page]"><?php _e( 'Use metadata of the following page, e.g. if this is a post about a product upgrade and you want users to "Like" the product, not the announcement:', 'ogp' ); ?></label><br/>
       <?php wp_dropdown_pages ( array ( 'name' => '_ogp__open_graph_pro[use_page]', 'selected' => $meta['use_page'], 'show_option_none' => __( '-- this post --', 'ogp' ) ) ); ?>
       </p>
       
     <?php endif; ?>
     
+    <script type="text/javascript">
+      //<![CDATA[
+      ogp_toggle_meta(document.getElementById('ogp_toggle').checked);
+      //]]>
+    </script>
+    
     <?php
     
     /** @todo change image, excerpt */
     
-    /* DEBUG
-    echo '<pre>';
-    print_r ( $p );
-    echo '</pre>';
-    //*/
-    /* DEBUG
-    
-    echo '<pre>';
-    print_r ( $meta );
-    echo '</pre>';
-    //*/
   }
   
   /**
    * hooked to {@link http://codex.wordpress.org/Plugin_API/Action_Reference WordPress action}: save_post
    * @since 1.0
+   * @uses sanitize_fb_admins
    */
   function save_post ( $postid )
   {
     // don't do anything if this is an autosave
     if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
     
+    // don't do anything if this is saving a revision
+    if ( wp_is_post_revision ( $postid ) ) return;
+    
+    // get form data
+    if ( !isset ( $_POST['_ogp__open_graph_pro'] ) ) return; // weird! but it seems this action is run even before you've created the post or entered one bit of data that would run an autosave; this line prevents a NOTICE from being thrown
+    $formdata = $_POST['_ogp__open_graph_pro'];
+    
+    // don't do anything if we don't have the meta box
+    if ( !is_array ( $formdata ) ) return;
+    
     // don't do anything if the nonce fails
-    if ( !isset ( $_POST['_ogp_nonce'] ) || !wp_verify_nonce ( $_POST['_ogp_nonce'], plugin_basename( __FILE__ ) ) ) return;
+    if ( !isset ( $formdata['nonce'] ) || !wp_verify_nonce ( $formdata['nonce'], plugin_basename( __FILE__ ) ) ) return;
 
     // don't do anything if the user doesn't have sufficient permissions
+    /** @todo carefully review permissions, particularly in scenarios where "Contributor" users can write but not publish posts; they should still be able to create Open Graph Pro settings (or should they not?) */
     if ( ( 'page' == $_POST['post_type'] ) && !current_user_can( 'edit_page', $postid ) ) return;
     if ( ( 'post' == $_POST['post_type'] ) && !current_user_can( 'edit_post', $postid ) ) return;
     
-    // get form data
-    $formdata = $_POST['_ogp__open_graph_pro'];
+    // get current (previous) meta data
+    $oldmeta = get_post_meta ( $postid, '_ogp__open_graph_pro', true );
     
-    /** @todo sanitize */
+    /** @todo sanitize and strip slashes if necessary */
     $meta = array (
-      'use_page' => ( isset ( $formdata['use_page'] ) ) ? $formdata['use_page'] : '',
-      'type' => ( isset ( $formdata['type'] ) ) ? $formdata['type'] : 'article',
-      'fb_admins' => ( isset ( $formdata['fb_admins'] ) ) ? $formdata['fb_admins'] : '',
+      'use_page' => ( isset ( $formdata['use_page'] ) ) ? $formdata['use_page'] : ( ( is_array ( $oldmeta ) ) ? $oldmeta['use_page'] : '' ),
+      'type' => ( isset ( $formdata['type'] ) ) ? $formdata['type'] : ( ( is_array ( $oldmeta ) ) ? $oldmeta['type'] : 'article' ),
+      'fb_admins' => ogp__open_graph_pro::sanitize_fb_admins ( ( isset ( $formdata['fb_admins'] ) ) ? $formdata['fb_admins'] : ( ( is_array ( $oldmeta ) ) ? $oldmeta['fb_admins'] : '' ) ),
+      'toggle' => ( isset ( $formdata['toggle'] ) && ( 'on' == $formdata['toggle'] ) ) ? 'on' : 'off',
     );
     
     // write to database
-    update_post_meta ( $postid, '_ogp__open_graph_pro', $meta );
+    update_post_meta ( $postid, '_ogp__open_graph_pro', $meta, $oldmeta );
   }
   
   /**
@@ -448,6 +542,7 @@ class ogp__open_graph_pro
    */
   function admin_init ()
   {
+    // == options_page stuff
     add_settings_section ( 'ogp_type', __( 'Object Type', 'ogp' ), array ( 'ogp__open_graph_pro', 'settings_section__type' ), 'ogp' );
     add_settings_field ( 'ogp_type_type', __( 'Set Object Type to', 'ogp' ), array ( 'ogp__open_graph_pro', 'settings_field__type__type' ), 'ogp', 'ogp_type' );
     
@@ -463,11 +558,27 @@ class ogp__open_graph_pro
     add_settings_field ( 'ogp_advanced_individual_on', __( 'Turn Open Graph on', 'ogp' ), array ( 'ogp__open_graph_pro', 'settings_field__advanced__individual_on' ), 'ogp', 'ogp_advanced' );
     
     register_setting ( 'ogp', 'ogp', array ( 'ogp__open_graph_pro', 'sanitize__ogp' ) );
-
+    
+    // == general / link to options_page
     add_filter ( 'plugin_action_links_' . plugin_basename ( __FILE__ ), array ( 'ogp__open_graph_pro', 'plugin_action_links' ) );
     
-    add_meta_box ( 'ogp__open_graph_pro', __( 'Open Graph Protocol (Facebook)', 'ogp' ), array ( 'ogp__open_graph_pro', 'meta_box' ), 'post', 'normal', 'high' );
-    add_meta_box ( 'ogp__open_graph_pro', __( 'Open Graph Protocol (Facebook)', 'ogp' ), array ( 'ogp__open_graph_pro', 'meta_box' ), 'page', 'normal', 'high' );
+    // == meta boxes for post and page editing screens
+    
+    // only turn the meta boxes on for each post type if the use of individual settings hasn't been disabled in advanced options
+    $options = get_option ( 'ogp' );
+    
+    if ( !is_array ( $options ) || !isset ( $options['advanced']['posts_on'] ) || ( '1' == $options['advanced']['posts_on'] ) )
+      add_meta_box ( 'ogp__open_graph_pro', __( 'Open Graph Protocol (Facebook)', 'ogp' ), array ( 'ogp__open_graph_pro', 'meta_box' ), 'post', 'normal', 'high' );
+    
+    if ( !is_array ( $options ) || !isset ( $options['advanced']['pages_on'] ) || ( '1' == $options['advanced']['pages_on'] ) )
+    {
+      add_meta_box ( 'ogp__open_graph_pro', __( 'Open Graph Protocol (Facebook)', 'ogp' ), array ( 'ogp__open_graph_pro', 'meta_box' ), 'page', 'normal', 'high' );
+      // the WordPress 3.0 way of adding the excerpts meta box to page editing screens
+      if ( function_exists ( 'add_post_type_support' ) ) add_post_type_support ( 'page', 'excerpt' );
+      // the WordPress 2.9 way of adding the excerpts meta box to page editing screens
+      else add_meta_box ( 'postexcerpt', __('Excerpt'), 'post_excerpt_meta_box', 'page', 'normal', 'core' );
+    }
+    
     add_action ( 'save_post', array ( 'ogp__open_graph_pro', 'save_post' ) );
   }
 
@@ -485,9 +596,10 @@ class ogp__open_graph_pro
         <?php settings_fields ( 'ogp' ); ?>
         <p class="submit"><input class="button-primary" type="submit" value="<?php esc_attr_e( 'Save Changes' ); // this is in the default domain! ?>" /></p>
       </form>
-      <!--
+      <?php /** @todo put the Linter link for the site's home page somewhere useful */ ?>
+      <?php /* ?>
       <a href="http://developers.facebook.com/tools/lint?url=<?php echo urlencode ( get_bloginfo('url') ); ?>">Lint</a>
-      -->
+      <?php //*/ ?>
     </div>
     <?php
   }
@@ -576,7 +688,7 @@ class ogp__open_graph_pro
     }
     ?>
     <select name="<?php echo $name; ?>" id="<?php echo $id; ?>">
-      <?php foreach ( $types_by_category as $category ) if ( !empty ( $category['types'] ) ) : ?>
+      <?php foreach ( apply_filters ( 'ogp_types_by_category', $types_by_category ) as $category ) if ( !empty ( $category['types'] ) ) : ?>
         <optgroup label="<?php echo $category['name']; ?>">
           <?php foreach ( $category['types'] as $option_value => $option_name ) : ?>
             <option value="<?php echo $option_value; ?>"<?php if ( $selected == $option_value ) echo ' selected="selected"'; ?>><?php echo $option_name; ?></option>
@@ -586,6 +698,20 @@ class ogp__open_graph_pro
     </select>
     <?php
   }
+  
+  /**
+   * loads Debug Bar Panel for {@link http://wordpress.org/extend/plugins/debug-bar/ Debug Bar Plugin}
+   * @since 1.1
+   */
+  function debug_bar_panels ( $a )
+  {
+    if ( class_exists ( 'Debug_Bar_Panel' ) )
+    {
+      require_once dirname ( __FILE__ ) . '/ogp-debug-bar-panel.php';
+      $a[]=new ogp__Debug_Bar_Panel( __( 'Open Graph Pro', 'ogp' ) );
+    }
+    return $a;
+  }
 
 } // class ogp__open_graph_pro
 
@@ -593,3 +719,4 @@ class ogp__open_graph_pro
 add_action ( 'init', array ( 'ogp__open_graph_pro', 'init' ) );
 add_action ( 'admin_init', array ( 'ogp__open_graph_pro', 'admin_init' ) );
 add_action ( 'admin_menu', array ( 'ogp__open_graph_pro', 'admin_menu' ) );
+add_filter ( 'debug_bar_panels', array ( 'ogp__open_graph_pro', 'debug_bar_panels' ) );
