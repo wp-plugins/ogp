@@ -1,0 +1,461 @@
+# Copyright (C) 2011 Martin Lormes
+# This file is distributed under the same license as the Open Graph Pro package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Open Graph Pro 1.1\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/ogp\n"
+"POT-Creation-Date: 2011-07-25 19:52:29+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2011-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: ogp.php:155
+msgid "Check Open Graph metadata using the Facebook URL Linter"
+msgstr ""
+
+#: ogp.php:156
+msgid "Check Open Graph metadata"
+msgstr ""
+
+#: ogp.php:225
+msgid ""
+"<p>By default the plugin labels your site a \"blog\". However, Open Graph "
+"supports various other object types.</p><p>You can change the object type "
+"<em>on a per-page basis on <a href=\"edit.php?post_type=page\">the page "
+"editing screens</a></em>. You should do that if you have multiple objects "
+"and a different page for each of them, e.g. the different products you sell, "
+"the different athletes on your team, one page per song or album of your "
+"band, etc.</p><p>You can change the object type <em>of your entire site</em> "
+"here.</p>"
+msgstr ""
+
+#: ogp.php:252
+msgid ""
+"<p>By default the plugin uses the featured image of your posts and pages. If "
+"your posts or pages do not have a featured image, the plugin looks for the "
+"first image in the post or page content. For all other uses (i.e. no image "
+"associated with the post or page, the home page with the latest posts, "
+"archives, category pages, etc.) the <a href=\"%s\">theme's header image</a> "
+"is used.</p><p>To alter this behaviour change the settings below.</p>"
+msgstr ""
+
+#: ogp.php:255
+msgid ""
+"<p>By default the plugin looks for the first image in the post or page "
+"content. For all other uses (i.e. no image associated with the post or page, "
+"the home page with the latest posts, archives, category pages, etc.) the <a "
+"href=\"%s\">theme's header image</a> is used.</p><p>To alter this behaviour "
+"change the settings below.</p>"
+msgstr ""
+
+#: ogp.php:258
+msgid ""
+"<p>By default the plugin uses the featured image of your posts and pages. If "
+"your posts or pages do not have a featured image, the plugin looks for the "
+"first image in the post or page content. For all other uses (i.e. no image "
+"associated with the post or page, the home page with the latest posts, "
+"archives, category pages, etc.) the header image specified below will be "
+"used.</p>"
+msgstr ""
+
+#: ogp.php:261
+msgid ""
+"<p>By default the plugin looks for the first image in the post or page "
+"content. For all other uses (i.e. no image associated with the post or page, "
+"the home page with the latest posts, archives, category pages, etc.) the "
+"header image specified below will be used.</p>"
+msgstr ""
+
+#: ogp.php:274
+msgid "Use header image only, i.e. do not look for images in posts or pages"
+msgstr ""
+
+#: ogp.php:288
+msgid ""
+"enter the URL of the image you want to see on Facebook &ndash; leave empty "
+"to use the theme's header image"
+msgstr ""
+
+#: ogp.php:298
+msgid ""
+"<p>Admin users can post updates to the timeline of fans of their site or "
+"perform other administrative tasks on the Facebook Platform. You can also "
+"link your site to a Facebook Platform Application to be able to stream "
+"updates programatically.</p>"
+msgstr ""
+
+#: ogp.php:312
+msgid ""
+"enter a comma separated list of <a href=\"%1$s\">numerical Facebook user "
+"IDs</a> &ndash; please note: users must \"Like\" the site (and each page "
+"respectively) to be approved as administrators"
+msgstr ""
+
+#: ogp.php:312 ogp.php:473
+msgid "http://ten-fingers-and-a-brain.com/wordpress-plugins/ogp/facebook-id/"
+msgstr ""
+
+#: ogp.php:328
+msgid "enter the numerical Facebook Platform Application ID"
+msgstr ""
+
+#: ogp.php:338
+msgid ""
+"<p>By default the plugin inserts Open Graph meta information for individual "
+"posts and for individual pages. Whenever someone likes or shares the URL of "
+"another part of your blog, e.g. an archive page, they are redirected to the "
+"main page of the blog/site.</p>"
+msgstr ""
+
+#: ogp.php:353
+msgid "For Posts"
+msgstr ""
+
+#: ogp.php:356
+msgid "For Pages"
+msgstr ""
+
+#: ogp.php:450
+msgid ""
+"This page has individual Open Graph Protocol meta information, i.e. do "
+"<em>not</em> use the same data as on the home page"
+msgstr ""
+
+#: ogp.php:452
+msgid ""
+"Use metadata of the following page, e.g. if this is a page about a product "
+"feature and you want users to \"Like\" the entire product, not just the "
+"feature:"
+msgstr ""
+
+#: ogp.php:454
+msgid "-- this page --"
+msgstr ""
+
+#: ogp.php:457
+msgid "Change the object type for this page to:"
+msgstr ""
+
+#: ogp.php:471
+msgid "Add the following Facebook users as administrators to this page:"
+msgstr ""
+
+#: ogp.php:473
+msgid ""
+"(enter a comma separated list of <a href=\"%1$s\">numerical Facebook user "
+"IDs</a> &ndash; please note: users must \"Like\" the page to be approved as "
+"administrators)"
+msgstr ""
+
+#: ogp.php:476
+msgid ""
+"This post has individual Open Graph Protocol meta information, i.e. do "
+"<em>not</em> use the same data as on the home page"
+msgstr ""
+
+#: ogp.php:478
+msgid ""
+"Use metadata of the following page, e.g. if this is a post about a product "
+"upgrade and you want users to \"Like\" the product, not the announcement:"
+msgstr ""
+
+#: ogp.php:479
+msgid "-- this post --"
+msgstr ""
+
+#: ogp.php:546
+msgid "Object Type"
+msgstr ""
+
+#: ogp.php:547
+msgid "Set Object Type to"
+msgstr ""
+
+#: ogp.php:549
+msgid "Image"
+msgstr ""
+
+#: ogp.php:550
+msgid "Replace Header Image with"
+msgstr ""
+
+#: ogp.php:550
+msgid "Header Image"
+msgstr ""
+
+#: ogp.php:551
+msgid "Use Header Image only"
+msgstr ""
+
+#: ogp.php:553
+msgid "Facebook"
+msgstr ""
+
+#: ogp.php:554
+msgid "Admin User(s)"
+msgstr ""
+
+#: ogp.php:555
+msgid "Application ID"
+msgstr ""
+
+#: ogp.php:557
+msgid "Advanced Settings"
+msgstr ""
+
+#: ogp.php:558
+msgid "Turn Open Graph on"
+msgstr ""
+
+#: ogp.php:571 ogp.php:575
+msgid "Open Graph Protocol (Facebook)"
+msgstr ""
+
+#: ogp.php:579
+msgid "Excerpt"
+msgstr ""
+
+#: ogp.php:593 ogp.php:613
+msgid "Open Graph Pro Settings"
+msgstr ""
+
+#. #-#-#-#-#  plugin.pot (Open Graph Pro 1.1)  #-#-#-#-#
+#. Plugin Name of the plugin/theme
+#: ogp.php:613 ogp.php:615 ogp.php:711
+msgid "Open Graph Pro"
+msgstr ""
+
+#. translators: %1$s is the plugin name, %2$s is the Plugin URI, %3$s links to
+#. the Open Graph Protocol website, %4$s links to the Open Graph Protocol page
+#. at Facebook
+#: ogp.php:615
+msgid ""
+"<p><em>%1$s</em> automagically adds Open Graph tags to your blog. Control "
+"how your posts and pages are presented on Facebook and other social media "
+"sites.</p><p><strong>No configuration needed</strong>: The default settings "
+"should work just fine for most blogs. For everyone else the settings page "
+"should be pretty self explaining. If you find that it is not, you can "
+"contact the author of this plugin via his blog at <a href=\"%2$s\">ten-"
+"fingers-and-a-brain.com</a></p><p>For more information on the Open Graph "
+"protocol go to the <a href=\"%3$s\">official Open Graph website at ogp.me</"
+"a> or consult the <a href=\"%4$s\">Developer section at facebook.com</a></p>"
+msgstr ""
+
+#. #-#-#-#-#  plugin.pot (Open Graph Pro 1.1)  #-#-#-#-#
+#. Plugin URI of the plugin/theme
+#: ogp.php:615
+msgid "http://ten-fingers-and-a-brain.com/wordpress-plugins/ogp/"
+msgstr ""
+
+#: ogp.php:615
+msgid "http://27i.de/ogp"
+msgstr ""
+
+#: ogp.php:615
+msgid "http://27i.de/fbdog"
+msgstr ""
+
+#: ogp.php:626
+msgid "Websites"
+msgstr ""
+
+#: ogp.php:627
+msgid "Blog"
+msgstr ""
+
+#: ogp.php:628
+msgid "Website"
+msgstr ""
+
+#: ogp.php:629
+msgid "Article"
+msgstr ""
+
+#: ogp.php:631
+msgid "Activities"
+msgstr ""
+
+#: ogp.php:632
+msgid "Activity"
+msgstr ""
+
+#: ogp.php:633
+msgid "Sport"
+msgstr ""
+
+#: ogp.php:635
+msgid "Businesses"
+msgstr ""
+
+#: ogp.php:636
+msgid "Bar"
+msgstr ""
+
+#: ogp.php:637
+msgid "Company"
+msgstr ""
+
+#: ogp.php:638
+msgid "Cafe"
+msgstr ""
+
+#: ogp.php:639
+msgid "Hotel"
+msgstr ""
+
+#: ogp.php:640
+msgid "Restaurant"
+msgstr ""
+
+#: ogp.php:642
+msgid "Groups"
+msgstr ""
+
+#: ogp.php:643
+msgid "Cause"
+msgstr ""
+
+#: ogp.php:644
+msgid "Sports League"
+msgstr ""
+
+#: ogp.php:645
+msgid "Sports Team"
+msgstr ""
+
+#: ogp.php:647
+msgid "Organizations"
+msgstr ""
+
+#: ogp.php:648
+msgid "Band"
+msgstr ""
+
+#: ogp.php:649
+msgid "Government"
+msgstr ""
+
+#: ogp.php:650
+msgid "Non-Profit"
+msgstr ""
+
+#: ogp.php:651
+msgid "School"
+msgstr ""
+
+#: ogp.php:652
+msgid "University"
+msgstr ""
+
+#: ogp.php:654
+msgid "People"
+msgstr ""
+
+#: ogp.php:655
+msgid "Actor"
+msgstr ""
+
+#: ogp.php:656
+msgid "Athlete"
+msgstr ""
+
+#: ogp.php:657
+msgid "Author"
+msgstr ""
+
+#: ogp.php:658
+msgid "Director"
+msgstr ""
+
+#: ogp.php:659
+msgid "Musician"
+msgstr ""
+
+#: ogp.php:660
+msgid "Politician"
+msgstr ""
+
+#: ogp.php:661
+msgid "Public Figure"
+msgstr ""
+
+#: ogp.php:663
+msgid "Places"
+msgstr ""
+
+#: ogp.php:664
+msgid "City"
+msgstr ""
+
+#: ogp.php:665
+msgid "Country"
+msgstr ""
+
+#: ogp.php:666
+msgid "Landmark"
+msgstr ""
+
+#: ogp.php:667
+msgid "State or Province"
+msgstr ""
+
+#: ogp.php:669
+msgid "Products and Entertainment"
+msgstr ""
+
+#: ogp.php:670
+msgid "Album"
+msgstr ""
+
+#: ogp.php:671
+msgid "Book"
+msgstr ""
+
+#: ogp.php:672
+msgid "Drink"
+msgstr ""
+
+#: ogp.php:673
+msgid "Food"
+msgstr ""
+
+#: ogp.php:674
+msgid "Game"
+msgstr ""
+
+#: ogp.php:675
+msgid "Product"
+msgstr ""
+
+#: ogp.php:676
+msgid "Song"
+msgstr ""
+
+#: ogp.php:677
+msgid "Movie"
+msgstr ""
+
+#: ogp.php:678
+msgid "TV Show"
+msgstr ""
+
+#: ogp-debug-bar-panel.php:23
+msgid "Meta Tags"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"Adds Open Graph tags to your blog. Control how your posts and pages are "
+"presented on Facebook and other social media sites. No configuration needed."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Martin Lormes"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://ten-fingers-and-a-brain.com/"
+msgstr ""

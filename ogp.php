@@ -138,7 +138,10 @@ class Open_Graph_Pro
     $description = $description;
     
     // return an array containing all the meta information
-    return apply_filters ( 'ogp_get_metadata', compact ( 'title', 'site_name', 'description', 'type', 'url', 'image', 'admins', 'app_id' ) );
+    $a = array ( 'og' => array ( 'id' => 'http://ogp.me/ns#', 'metadata' => compact ( 'title', 'site_name', 'description', 'type', 'url', 'image' ) ) );
+    if ( ( '' != $admins ) || ( '' != $app_id ) )
+      $a['fb'] = array ( 'id' => 'http://www.facebook.com/2008/fbml', 'metadata' => compact ( 'admins', 'app_id' ) );
+    return apply_filters ( 'ogp_get_metadata', $a );
   }
 }
 
@@ -161,17 +164,19 @@ class ogp__open_graph_pro
    * let's put the Open Graph and Facebook namespaces in the <html> tag (if the theme supports it)
    *
    * hooked to {@link http://codex.wordpress.org/Plugin_API/Filter_Reference WordPress filter}: language_attributes
+   *
+   * @uses Open_Graph_Pro::get_metadata
    */
   function language_attributes ( $s )
   {
     if ( !is_admin() ) // we don't need this in the admin section
     {
-      $options = get_option ( 'ogp' );
       /** @todo check if another plugin has already added the namespace information */
-      $s .= ' xmlns:og="http://ogp.me/ns#"';
-      // add Facebook Namespace in case the fb:admins or app_id have been set
-      if ( is_array ( $options ) && ( ( isset ( $options['facebook']['admins'] ) && ( '' != $options['facebook']['admins'] ) ) || ( isset ( $options['facebook']['app_id'] ) && ( '' != $options['facebook']['app_id'] ) ) ) )
-        $s .= ' xmlns:fb="http://www.facebook.com/2008/fbml"';
+      $data = Open_Graph_Pro::get_metadata();
+      foreach ( $data as $prefix => $namespace )
+      {
+        $s .= " xmlns:$prefix=\"{$namespace['id']}\"";
+      }
     }
     return $s;
   }
@@ -187,19 +192,14 @@ class ogp__open_graph_pro
   function wp_head ( $return = false )
   {
     $data = Open_Graph_Pro::get_metadata();
-    array_walk ( $data, 'esc_attr' );
-    extract ( $data );
     
     // == now let's actually output everything
-                              $html  = "<!-- Open Graph Pro 1.1 -->\n";
-                              $html .= "<meta property=\"og:title\" content=\"$title\" />\n";
-                              $html .= "<meta property=\"og:site_name\" content=\"$site_name\" />\n";
-    if ( '' != $description ) $html .= "<meta property=\"og:description\" content=\"$description\" />\n";
-                              $html .= "<meta property=\"og:type\" content=\"$type\" />\n";
-                              $html .= "<meta property=\"og:url\" content=\"$url\" />\n";
-    if ( '' != $image )       $html .= "<meta property=\"og:image\" content=\"$image\" />\n";
-    if ( '' != $admins )      $html .= "<meta property=\"fb:admins\" content=\"$admins\" />\n";
-    if ( '' != $app_id )      $html .= "<meta property=\"fb:app_id\" content=\"$app_id\" />\n";
+    $html  = "<!-- Open Graph Pro 1.1 -->\n";
+    foreach ( $data as $prefix => $namespace ) foreach ( $namespace['metadata'] as $name => $item ) if ( '' != $item )
+    {
+      $content = esc_attr ( $item );
+      $html .= "<meta property=\"$prefix:$name\" content=\"$content\" />\n";
+    }
     
     if ( $return ) return $html;
     else           echo   $html;
